@@ -1,4 +1,5 @@
 const express = require('express');
+const messageHandler = require("./handlers/message.handler")
 var cors = require('cors')
 const app = express();
 
@@ -18,13 +19,14 @@ app.get('/', (req, res) => {
     res.sendFile(__dirname + '/index.html');
 });
 
-io.on('connection', (socket) => {
+let currentUserId = 2;
+const userIds = {}
+
+io.on('connection', socket=> {
     console.log('a user connected');
-    socket.on("message", message => {
-        console.log(message)
-        io.emit("message",message)
-    })
-    
+    console.log(socket.id)
+    userIds[socket.id] = currentUserId++
+    messageHandler.handleMessage(socket, userIds);
     
     socket.on('disconnect', () => {
         console.log('user disconnected');
