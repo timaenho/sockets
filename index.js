@@ -20,13 +20,19 @@ app.get('/', (req, res) => {
 });
 
 let currentUserId = 2;
-const userIds = {}
+const users = {}
 
 io.on('connection', socket=> {
     console.log('a user connected');
     console.log(socket.id)
-    userIds[socket.id] = currentUserId++
-    messageHandler.handleMessage(socket, userIds);
+    users[socket.id] = {userId: currentUserId++}
+
+    socket.on("join", username => {
+        users[socket.id].username = username;
+        console.log(username)
+    });
+
+    messageHandler.handleMessage(socket, users);
     
     socket.on('disconnect', () => {
         console.log('user disconnected');
