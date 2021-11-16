@@ -22,18 +22,34 @@ app.get('/', (req, res) => {
 let currentUserId = 2;
 const users = {}
 
+
 io.on('connection', socket=> {
     console.log('a user connected');
     console.log(socket.id)
     users[socket.id] = {userId: currentUserId++}
 
-    socket.on("join", username => {
+    /socket.on("join", (username,avatar) => {
         users[socket.id].username = username;
+        users[socket.id].avatar = avatar;
         console.log(username)
-    });
+    }); 
 
-    messageHandler.handleMessage(socket, users);
-    
+   
+    socket.on("action",action =>{
+        switch (action.type){
+            case "server/hello":
+                console.log("Hello", action.data)
+                socket.emit("action", {type:"message",data: "Good Day!"})
+            break
+            case "server/join":
+                console.log("Got join event",action.data)
+                users[socket.id].username = action.data.username;
+                users[socket.id].avatar = action.data.avatar;
+                messageHandler.handleMessage(socket, users);
+            break
+            }
+    })
+ 
     socket.on('disconnect', () => {
         console.log('user disconnected');
     });
