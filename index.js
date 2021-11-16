@@ -28,13 +28,15 @@ io.on('connection', socket=> {
     console.log(socket.id)
     users[socket.id] = {userId: currentUserId++}
 
-    /socket.on("join", (username,avatar) => {
+    socket.on("join", (username,avatar) => {
+        console.log("on join " + username + " " + avatar)
         users[socket.id].username = username;
         users[socket.id].avatar = avatar;
         console.log(username)
     }); 
+    
+    messageHandler.handleMessage(socket, users);
 
-   
     socket.on("action",action =>{
         switch (action.type){
             case "server/hello":
@@ -45,7 +47,7 @@ io.on('connection', socket=> {
                 console.log("Got join event",action.data)
                 users[socket.id].username = action.data.username;
                 users[socket.id].avatar = action.data.avatar;
-                messageHandler.handleMessage(socket, users);
+               
             break
             }
     })
