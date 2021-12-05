@@ -47,7 +47,13 @@ io.on('connection', socket=> {
                 console.log("Got join event",action.data)
                 users[socket.id].username = action.data.username;
                 users[socket.id].avatar = action.data.avatar;
-               
+                users[socket.id].locationLongitude = action.data.locationLongitude;
+                users[socket.id].locationLatitude = action.data.locationLatitude;
+                users[socket.id].descripcion = "Idioma a aprender" + action.data.idiomaAaprender;
+                const values = Object.values(users)
+                const soloConCoordinatos = values.filter(u => u.username != undefined && u.locationLatitude != null )
+                console.log(soloConCoordinatos)
+                io.emit("action",{type:"users_online", data: soloConCoordinatos})      
             break
             }
     })
