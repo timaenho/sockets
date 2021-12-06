@@ -2,6 +2,7 @@ const express = require('express');
 const messageHandler = require("./handlers/message.handler")
 var cors = require('cors')
 const app = express();
+const { v1: uuidv1 } = require('uuid');
 
 app.use(cors())
 
@@ -19,30 +20,29 @@ app.get('/', (req, res) => {
     res.sendFile(__dirname + '/index.html');
 });
 
-let currentUserId = 2;
-const users = {}
 
+const users = {}
+function createUsersOnline() {
+    const values = Object.values(users)
+    const soloConCoordinatos = values.filter(u => 
+           u.username != undefined 
+        && u.coordinates != null 
+        && u.coordinates != ' ' 
+        && typeof u.coordinates.latitude === 'number')
+    return soloConCoordinatos;
+}
 
 io.on('connection', socket=> {
     console.log('a user connected');
     console.log(socket.id)
-    users[socket.id] = {userId: currentUserId++}
-
-    socket.on("join", (username,avatar) => {
-        console.log("on join " + username + " " + avatar)
-        users[socket.id].username = username;
-        users[socket.id].avatar = avatar;
-        console.log(username)
-    }); 
-    
+    users[socket.id] = {userId: uuidv1()}
     messageHandler.handleMessage(socket, users);
-
+    socket.on("disconnect", () => {
+        delete users[socket.id]
+        io.emit("action", {type: "users_online", data: createUsersOnline()})
+    })
     socket.on("action",action =>{
         switch (action.type){
-            case "server/hello":
-                console.log("Hello", action.data)
-                socket.emit("action", {type:"message",data: "Good Day!"})
-            break
             case "server/join":
                 console.log("Got join event",action.data)
                 users[socket.id].username = action.data.username;
@@ -50,22 +50,43 @@ io.on('connection', socket=> {
                 users[socket.id].coordinates = action.data.coordinates;
                /*  users[socket.id].locationLongitude = action.data.locationLongitude;
                 users[socket.id].locationLatitude = action.data.locationLatitude; */
-                users[socket.id].descripcion = "Idioma a aprender" + action.data.idiomaAaprender;
-                const values = Object.values(users)
-                const soloConCoordinatos = values.filter(u => 
-                       u.username != undefined 
-                    && u.coordinates != null 
-                    && u.coordinates != ' ' 
-                    && typeof u.coordinates.latitude === 'number')
-                console.log(soloConCoordinatos)
-                io.emit("action",{type:"users_online", data: soloConCoordinatos})      
+                users[socket.id].descripcion = "Idioma a aprender: " + action.data.idiomaAaprender;
+
+                console.log(createUsersOnline())
+                io.emit("action",{
+                    type:"users_online", 
+                    data: createUsersOnline()
+                }) 
+                socket.emit("action", {type: "self_user", data: users[socket.id]})     
             break
+            case"server/private_message":
+                const conversationId = action.data.conversationId
+                const from = users[socket.id].userId
+                console.log("from " + from)
+                const userValues = Object.values(users)
+                console.log("userValues " + userValues)
+                const socketIds = Object.keys(users)
+                console.log("socketIds " +  socketIds)
+
+                for(let i = 0; i < userValues.length;i++){
+                    console.log("index " + i)
+                    if(userValues[i].userId === conversationId){
+                        const socketId = socketIds[i]
+                        console.log("en for" + socketId)
+                        console.log("socket" + io.to(socketId))
+                        io.to(socketId).emit("action", {
+                            type:"private_message",
+                            data: {
+                                ...action.data,
+                                conversationId: from
+                            }
+                        })
+                        break
+                    }
+                }
+                break
             }
     })
- 
-    socket.on('disconnect', () => {
-        console.log('user disconnected');
-    });
 });
 
 server.listen(3000, () => {
