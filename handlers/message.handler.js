@@ -10,7 +10,8 @@ function createMessage(user, messageText){
           user: {
             _id: user.userId,
             name: user.username,
-            avatar: user.avatar
+            avatar: user.avatar,
+            mail: user.email
       }
     }
     }

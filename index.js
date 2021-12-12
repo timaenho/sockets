@@ -48,10 +48,11 @@ io.on('connection', socket=> {
                 users[socket.id].username = action.data.username;
                 users[socket.id].avatar = action.data.avatar;
                 users[socket.id].coordinates = action.data.coordinates;
+                users[socket.id].mail = action.data.email;
                /*  users[socket.id].locationLongitude = action.data.locationLongitude;
                 users[socket.id].locationLatitude = action.data.locationLatitude; */
                 users[socket.id].descripcion = "Idioma a aprender: " + action.data.idiomaAaprender;
-
+                console.log(users[socket.id])
                 console.log(createUsersOnline())
                 io.emit("action",{
                     type:"users_online", 
@@ -62,18 +63,16 @@ io.on('connection', socket=> {
             case"server/private_message":
                 const conversationId = action.data.conversationId
                 const from = users[socket.id].userId
-                console.log("from " + from)
+                /* const selfUserMail = users[socket.id].mail
+                console.log(selfUserMail) */
+                //const otherUsermail = 
                 const userValues = Object.values(users)
-                console.log("userValues " + userValues)
                 const socketIds = Object.keys(users)
-                console.log("socketIds " +  socketIds)
 
                 for(let i = 0; i < userValues.length;i++){
                     console.log("index " + i)
                     if(userValues[i].userId === conversationId){
                         const socketId = socketIds[i]
-                        console.log("en for" + socketId)
-                        console.log("socket" + io.to(socketId))
                         io.to(socketId).emit("action", {
                             type:"private_message",
                             data: {
